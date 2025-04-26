@@ -15,7 +15,18 @@ def encurtar():
     # Gerar um código curto (por enquanto, usaremos um número aleatório)
     import random
     codigo = str(random.randint(1000, 9999))
+    urls[codigo] = url_longa
     return f"URL encurtada: http://localhost:5000/{codigo}"
+
+# Nova rota para redirecionar
+@app.route("/<codigo>")
+def redirecionar(codigo):
+    url_longa = urls.get(codigo)
+    print(urls)
+    if url_longa:
+        return redirect(url_longa)
+    else:
+        return "URL não encontrada!", 404
 
 if __name__ == "__main__":
     app.run(debug=True)
