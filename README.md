@@ -109,7 +109,7 @@ A simple and efficient URL shortener developed in Python using Flask. This proje
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/encurtador_de_url.git
+git clone https://github.com/violiveiradev/encurtador_de_url.git
 cd encurtador_de_url
 ```
 
