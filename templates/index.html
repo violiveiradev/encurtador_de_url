@@ -18,6 +18,10 @@
                         <input type="url" name="url_longa" class="form-control form-control-lg" placeholder="https://exemplo.com" required>
                         <button type="submit" class="btn btn-primary btn-lg">Encurtar</button>
                     </div>
+                    <div class="mb-3">
+                        <label for="codigo_personalizado" class="form-label">Código personalizado (opcional):</label>
+                        <input type="text" name="codigo_personalizado" class="form-control" placeholder="ex: meulink">
+                    </div>
                 </form>
 
                 {% if url_encurtada %}
@@ -33,7 +37,7 @@
                         {{ error }}
                     </div>
                 {% endif %}
-                
+
             </div>
         </div>
     </div>

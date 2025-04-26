@@ -47,26 +47,36 @@ def home():
 def encurtar():
     url_longa = request.form["url_longa"]
 
+    # Código personalizado
+    codigo_personalizado = request.form.get("codigo_personalizado", "").strip()
+
     # Validação
     if not validators.url(url_longa):
         error =  "URL inválida! Certifique-se de incluir 'http://' ou 'https://'."
     else:
         error = None
-    
-    codigo = gerar_codigo(url_longa)
 
     db = get_db()
     cursor = db.cursor()
-    
-    # Verifica se a URL já existe no banco de dados
-    cursor.execute("SELECT codigo FROM urls WHERE url_longa = ?", (url_longa,))
-    resultado = cursor.fetchone()
-    
-    if resultado:
-        codigo = resultado["codigo"]
+
+    # Se houver código personalizado, usa ele (após validar)
+    if codigo_personalizado:
+        if not codigo_personalizado.isalnum():
+            error = "Código personalizado inválido! Só pode conter letras e números."
+            return render_template("index.html", error=error)
+        
+        cursor.execute("SELECT codigo FROM urls WHERE codigo = ?", (codigo_personalizado,))
+        if cursor.fetchone():
+            error = "Este código já está em uso! Escolha outro."
+            return render_template("index.html", error=error)
+        
+        codigo = codigo_personalizado
     else:
-        cursor.execute("INSERT INTO urls (codigo, url_longa) VALUES (?, ?)", (codigo, url_longa))
-        db.commit()
+        codigo = gerar_codigo(url_longa)
+
+    # Insere no banco de dados
+    cursor.execute("INSERT INTO urls (codigo, url_longa) VALUES (?, ?)", (codigo, url_longa))
+    db.commit()
 
     context = {
         "url_encurtada": f"http://localhost:5000/{codigo}",
