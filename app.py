@@ -118,5 +118,5 @@ def stats(codigo):
 
     return render_template("stats.html", codigo=codigo, url=url, total_acessos=total_acessos)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
