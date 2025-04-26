@@ -20,6 +20,15 @@ def init_db():
     with app.app_context():
         db = get_db()
         cursor = db.cursor()
+
+        # Cria a tabela 'urls' (se não existir)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS urls (
+                codigo TEXT PRIMARY KEY,
+                url_longa TEXT NOT NULL
+            )
+        ''')
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS acessos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,5 +127,24 @@ def stats(codigo):
 
     return render_template("stats.html", codigo=codigo, url=url, total_acessos=total_acessos)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+@app.route("/table")
+def urls_table():
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('''
+        SELECT 
+            urls.codigo, 
+            urls.url_longa, 
+            COUNT(acessos.id) AS total_acessos
+        FROM urls
+        LEFT JOIN acessos ON urls.codigo = acessos.codigo
+        GROUP BY urls.codigo
+        ORDER BY urls.codigo
+    ''')
+    
+    urls = cursor.fetchall()
+    return render_template("table.html", urls=urls)
+
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=5000, debug=True)
