@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, g
 import hashlib
 import base64
 import sqlite3
+import validators
 
 app = Flask(__name__)
 
@@ -20,11 +21,13 @@ def init_db():
         db = get_db()
         cursor = db.cursor()
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS urls (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            codigo TEXT UNIQUE,
-            url_longa TEXT NOT NULL
-        )''')
+            CREATE TABLE IF NOT EXISTS acessos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo TEXT,
+                data_acesso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (codigo) REFERENCES urls(codigo)
+            )
+        ''')
         db.commit()
 # Inicializa o banco de dados ao iniciar o app
 init_db()	
@@ -43,29 +46,55 @@ def home():
 @app.route("/encurtar", methods=["POST"])
 def encurtar():
     url_longa = request.form["url_longa"]
-    codigo = gerar_codigo(url_longa)
+
+    # Código personalizado
+    codigo_personalizado = request.form.get("codigo_personalizado", "").strip()
+
+    # Validação
+    if not validators.url(url_longa):
+        error =  "URL inválida! Certifique-se de incluir 'http://' ou 'https://'."
+    else:
+        error = None
 
     db = get_db()
     cursor = db.cursor()
-    
-    # Verifica se a URL já existe no banco de dados
-    cursor.execute("SELECT codigo FROM urls WHERE url_longa = ?", (url_longa,))
-    resultado = cursor.fetchone()
-    
-    if resultado:
-        codigo = resultado["codigo"]
-    else:
-        cursor.execute("INSERT INTO urls (codigo, url_longa) VALUES (?, ?)", (codigo, url_longa))
-        db.commit()
 
-    url_encurtada = f"http://localhost:5000/{codigo}"
-    return render_template("index.html", url_encurtada=url_encurtada)
+    # Se houver código personalizado, usa ele (após validar)
+    if codigo_personalizado:
+        if not codigo_personalizado.isalnum():
+            error = "Código personalizado inválido! Só pode conter letras e números."
+            return render_template("index.html", error=error)
+        
+        cursor.execute("SELECT codigo FROM urls WHERE codigo = ?", (codigo_personalizado,))
+        if cursor.fetchone():
+            error = "Este código já está em uso! Escolha outro."
+            return render_template("index.html", error=error)
+        
+        codigo = codigo_personalizado
+    else:
+        codigo = gerar_codigo(url_longa)
+
+    # Insere no banco de dados
+    cursor.execute("INSERT INTO urls (codigo, url_longa) VALUES (?, ?)", (codigo, url_longa))
+    db.commit()
+
+    context = {
+        "url_encurtada": f"http://localhost:5000/{codigo}",
+        "error": error
+    }
+    return render_template("index.html", **context)
 
 # Nova rota para redirecionar
 @app.route("/<codigo>")
 def redirecionar(codigo):
     db = get_db()
     cursor = db.cursor()
+
+    # Registra o acesso
+    cursor.execute("INSERT INTO acessos (codigo) VALUES (?)", (codigo,))
+    db.commit()
+
+    # Redireciona
     cursor.execute("SELECT url_longa FROM urls WHERE codigo = ?", (codigo,))
     resultado = cursor.fetchone()
 
@@ -73,6 +102,21 @@ def redirecionar(codigo):
         return redirect(resultado["url_longa"])
     else:
         return "URL não encontrada!", 404
+    
+@app.route("/stats/<codigo>")
+def stats(codigo):
+    db = get_db()
+    cursor = db.cursor()
+
+    # Contagem de acessos
+    cursor.execute("SELECT COUNT(*) AS total FROM acessos WHERE codigo = ?", (codigo,))
+    total_acessos = cursor.fetchone()["total"]
+
+    # URL original
+    cursor.execute("SELECT url_longa FROM urls WHERE codigo = ?", (codigo,))
+    url = cursor.fetchone()["url_longa"]
+
+    return render_template("stats.html", codigo=codigo, url=url, total_acessos=total_acessos)
 
 if __name__ == "__main__":
     app.run(debug=True)
