@@ -47,7 +47,9 @@ def encurtar():
 
     # Validação
     if not validators.url(url_longa):
-        error = "URL inválida! Certifique-se de incluir 'http://' ou 'https://' no início da URL."
+        error =  "URL inválida! Certifique-se de incluir 'http://' ou 'https://'."
+    else:
+        error = None
     
     codigo = gerar_codigo(url_longa)
 
