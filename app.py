@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect
+import random
 
 app = Flask(__name__)
 
@@ -12,11 +13,10 @@ def home():
 @app.route("/encurtar", methods=["POST"])
 def encurtar():
     url_longa = request.form["url_longa"]
-    # Gerar um código curto (por enquanto, usaremos um número aleatório)
-    import random
     codigo = str(random.randint(1000, 9999))
     urls[codigo] = url_longa
-    return f"URL encurtada: http://localhost:5000/{codigo}"
+    url_encurtada = f"http://localhost:5000/{codigo}"
+    return render_template("index.html", url_encurtada=url_encurtada)
 
 # Nova rota para redirecionar
 @app.route("/<codigo>")
