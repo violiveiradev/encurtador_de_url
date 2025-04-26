@@ -1,11 +1,34 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, g
 import hashlib
 import base64
+import sqlite3
 
 app = Flask(__name__)
 
-# Dicionário para armazenar as URLs
-urls = {}
+# Configuração do banco de dados
+DATABASE = "db.sqlite3"
+
+def get_db():
+    db = getattr(g, "_database", None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+        db.row_factory = sqlite3.Row
+    return db
+
+def init_db():
+    with app.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS urls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo TEXT UNIQUE,
+            url_longa TEXT NOT NULL
+        )''')
+        db.commit()
+# Inicializa o banco de dados ao iniciar o app
+init_db()	
+
 
 def gerar_codigo(url_longa):
     # Cria um hash usando SHA-256 e converte para base64 (mais curto)
@@ -21,16 +44,33 @@ def home():
 def encurtar():
     url_longa = request.form["url_longa"]
     codigo = gerar_codigo(url_longa)
-    urls[codigo] = url_longa
+
+    db = get_db()
+    cursor = db.cursor()
+    
+    # Verifica se a URL já existe no banco de dados
+    cursor.execute("SELECT codigo FROM urls WHERE url_longa = ?", (url_longa,))
+    resultado = cursor.fetchone()
+    
+    if resultado:
+        codigo = resultado["codigo"]
+    else:
+        cursor.execute("INSERT INTO urls (codigo, url_longa) VALUES (?, ?)", (codigo, url_longa))
+        db.commit()
+
     url_encurtada = f"http://localhost:5000/{codigo}"
     return render_template("index.html", url_encurtada=url_encurtada)
 
 # Nova rota para redirecionar
 @app.route("/<codigo>")
 def redirecionar(codigo):
-    url_longa = urls.get(codigo)
-    if url_longa:
-        return redirect(url_longa)
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT url_longa FROM urls WHERE codigo = ?", (codigo,))
+    resultado = cursor.fetchone()
+
+    if resultado:
+        return redirect(resultado["url_longa"])
     else:
         return "URL não encontrada!", 404
 
