@@ -14,5 +14,8 @@
     {% if url_encurtada %}
         <p>Sua URL encurtada: <a href="{{ url_encurtada }}">{{ url_encurtada }}</a></p>
     {% endif %}
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
 </body>
 </html>

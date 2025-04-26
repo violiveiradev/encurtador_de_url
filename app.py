@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, g
 import hashlib
 import base64
 import sqlite3
+import validators
 
 app = Flask(__name__)
 
@@ -43,6 +44,11 @@ def home():
 @app.route("/encurtar", methods=["POST"])
 def encurtar():
     url_longa = request.form["url_longa"]
+
+    # Validação
+    if not validators.url(url_longa):
+        error = "URL inválida! Certifique-se de incluir 'http://' ou 'https://' no início da URL."
+    
     codigo = gerar_codigo(url_longa)
 
     db = get_db()
@@ -58,8 +64,11 @@ def encurtar():
         cursor.execute("INSERT INTO urls (codigo, url_longa) VALUES (?, ?)", (codigo, url_longa))
         db.commit()
 
-    url_encurtada = f"http://localhost:5000/{codigo}"
-    return render_template("index.html", url_encurtada=url_encurtada)
+    context = {
+        "url_encurtada": f"http://localhost:5000/{codigo}",
+        "error": error
+    }
+    return render_template("index.html", **context)
 
 # Nova rota para redirecionar
 @app.route("/<codigo>")
