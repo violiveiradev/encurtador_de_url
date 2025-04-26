@@ -21,11 +21,13 @@ def init_db():
         db = get_db()
         cursor = db.cursor()
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS urls (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            codigo TEXT UNIQUE,
-            url_longa TEXT NOT NULL
-        )''')
+            CREATE TABLE IF NOT EXISTS acessos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo TEXT,
+                data_acesso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (codigo) REFERENCES urls(codigo)
+            )
+        ''')
         db.commit()
 # Inicializa o banco de dados ao iniciar o app
 init_db()	
@@ -77,6 +79,12 @@ def encurtar():
 def redirecionar(codigo):
     db = get_db()
     cursor = db.cursor()
+
+    # Registra o acesso
+    cursor.execute("INSERT INTO acessos (codigo) VALUES (?)", (codigo,))
+    db.commit()
+
+    # Redireciona
     cursor.execute("SELECT url_longa FROM urls WHERE codigo = ?", (codigo,))
     resultado = cursor.fetchone()
 
@@ -84,6 +92,21 @@ def redirecionar(codigo):
         return redirect(resultado["url_longa"])
     else:
         return "URL não encontrada!", 404
+    
+@app.route("/stats/<codigo>")
+def stats(codigo):
+    db = get_db()
+    cursor = db.cursor()
+
+    # Contagem de acessos
+    cursor.execute("SELECT COUNT(*) AS total FROM acessos WHERE codigo = ?", (codigo,))
+    total_acessos = cursor.fetchone()["total"]
+
+    # URL original
+    cursor.execute("SELECT url_longa FROM urls WHERE codigo = ?", (codigo,))
+    url = cursor.fetchone()["url_longa"]
+
+    return render_template("stats.html", codigo=codigo, url=url, total_acessos=total_acessos)
 
 if __name__ == "__main__":
     app.run(debug=True)
