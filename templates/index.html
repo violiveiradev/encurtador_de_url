@@ -11,5 +11,8 @@
         <input type="url" name="url_longa" placeholder="Cole a URL aqui" required>
         <button type="submit">Encurtar</button>
     </form>
+    {% if url_encurtada %}
+        <p>Sua URL encurtada: <a href="{{ url_encurtada }}">{{ url_encurtada }}</a></p>
+    {% endif %}
 </body>
 </html>
