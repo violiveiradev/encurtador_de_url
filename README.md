@@ -33,8 +33,8 @@ Um encurtador de URL simples e eficiente desenvolvido em Python usando Flask. Es
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/encurtador_de_url.git
-cd encurtador_de_url
+git clone https://github.com/violiveiradev/encurtador-url-flask.git
+cd encurtador-url-flask
 ```
 
 2. Crie um ambiente virtual (opcional, mas recomendado):
@@ -109,8 +109,8 @@ A simple and efficient URL shortener developed in Python using Flask. This proje
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/violiveiradev/encurtador_de_url.git
-cd encurtador_de_url
+git clone https://github.com/violiveiradev/encurtador-url-flask.git
+cd encurtador-url-flask
 ```
 
 2. Create a virtual environment (optional, but recommended):
